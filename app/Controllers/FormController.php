@@ -35,7 +35,7 @@ class FormController extends BaseController
             'categoria' => $this->request->getPost('categoria'),
         ];
 
-        $this->generarDocumentoWord($data);
+        $this->generarDocumentoWordTemplate($data);
     }
 
     private function generarDocumentoWord($data)
@@ -53,8 +53,6 @@ class FormController extends BaseController
         $propiedades->setSubject("Asunto");
         $propiedades->setKeywords("documento, php, word");
 
-        
-
         # Para que no diga que se abre en modo de compatibilidad
         $phpWord->getCompatibility()->setOoxmlVersion(15);
         # Idioma español de México
@@ -63,11 +61,11 @@ class FormController extends BaseController
         $section = $phpWord->addSection();
         $section->addText('Nombre: ' . $data['nombre']);
         $section->addText('Apellido: ' . $data['apellido']);
-        $section->addText('DNI: ' . $data['dni']);
+        $section->addText('DNI: ' . $data['dni']);  
         $section->addText('Categoría: ' . $data['categoria']);
 
-        // $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-        // $objWriter->save('archivo.docx');
+
+
 
         $nombre = $data['nombre'] . '-' .  $data['apellido'].'.docx';
 
@@ -82,11 +80,94 @@ class FormController extends BaseController
         ob_clean();
         # Y lo enviamos a php://output
         $objWriter->save("php://output");
-        //cerramos 
+        # cerramos el buffer 
+        exit;
+    }
+
+
+    private function generarDocumentoWordTemplate($data){
+
+        // // Ruta del template
+        // $templatePath = FCPATH . 'assets/cv.dotm';
+
+        // // Ruta de salida para el nuevo documento
+        // $outputPath = WRITEPATH . 'cv_generado.docm';
+
+        // // Copiar el template a la carpeta de salida
+        // copy($templatePath, $outputPath);
+
+        // // Cargar el documento template con PhpWord
+        // $phpWord = \PhpOffice\PhpWord\IOFactory::load($outputPath);
+
+        // // Reemplazar las variables en el documento
+        // $phpWord->setValue('nombre', $data['nombre']);
+        // $phpWord->setValue('apellido', $data['apellido']);
+        // $phpWord->setValue('dni', $data['dni']);
+        // $phpWord->setValue('categoria', $data['categoria']);
+
+        // // Guardar el documento modificado
+        // $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+        // $objWriter->save($outputPath);
+
+        // // Descargar el documento
+        // $this->response->setDownload('cv_generado.docm')->setFilePath($outputPath)->setStatusCode(200);
+
+
+        $templatePath = FCPATH . 'assets/cv.docx';
+
+        $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($templatePath);
+
+
+        // Crear un nuevo objeto PhpWord
+        $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        $filename = 'test.docx';
+
+        $templateProcessor->setValue('nombre', $data['nombre']);
+        $templateProcessor->setValue('apellido', $data['apellido']);
+        $templateProcessor->setValue('dni', $data['dni']);
+        $templateProcessor->setValue('categoria', $data['categoria']);
+
+        $templateProcessor->saveAs($filename);
+
+        // send results to browser to download
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename='.$filename);
+        header('Content-Transfer-Encoding: binary');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($filename));
+        flush();
+        readfile($filename);
+        unlink($filename); // deletes the temporary file
         exit;
 
-//       $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, "Word2007");
-//      $objWriter->save("Pepinillo.docx");
-    
+        // // Cargar el contenido del template
+        // $templateContent = file_get_contents($templatePath);
+
+        // // Reemplazar las variables en el template con los valores recibidos
+        // $templateContent = str_replace('{nombre}', $data['nombre'], $templateContent);
+        // $templateContent = str_replace('{apellido}', $data['apellido'], $templateContent);
+        // $templateContent = str_replace('{dni}', $data['dni'], $templateContent);
+        // $templateContent = str_replace('{categoria}', $data['categoria'], $templateContent);
+
+        // Cargar el contenido modificado en el objeto PhpWord
+        // \PhpOffice\PhpWord\IOFactory::load($templateContent, 'HTML', $phpWord);
+
+        // Ruta de salida para el nuevo documento
+        // $outputPath = WRITEPATH . 'cv_generado.docm';
+
+        // // Guardar el documento modificado
+        // $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+        // $objWriter->save($outputPath);
+
+        // // Descargar el documento
+        // return $this->response->download($outputPath, null, true);
+
     }
+
+
+
+
 }
